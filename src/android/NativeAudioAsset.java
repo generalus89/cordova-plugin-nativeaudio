@@ -11,6 +11,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
 
+import org.apache.cordova.CordovaInterface;
+
 import android.content.res.AssetFileDescriptor;
 
 public class NativeAudioAsset
@@ -19,7 +21,7 @@ public class NativeAudioAsset
 	private ArrayList<NativeAudioAssetComplex> voices;
 	private int playIndex = 0;
 	
-	public NativeAudioAsset(AssetFileDescriptor afd, int numVoices, float volume) throws IOException
+	public NativeAudioAsset(String filePath, int numVoices, float volume, CordovaInterface cordova) throws IOException
 	{
 		voices = new ArrayList<NativeAudioAssetComplex>();
 		
@@ -28,7 +30,7 @@ public class NativeAudioAsset
 		
 		for ( int x=0; x<numVoices; x++) 
 		{
-			NativeAudioAssetComplex voice = new NativeAudioAssetComplex(afd, volume);
+			NativeAudioAssetComplex voice = new NativeAudioAssetComplex(filePath, volume, cordova);
 			voices.add( voice );
 		}
 	}

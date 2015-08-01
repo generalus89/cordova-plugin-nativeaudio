@@ -7,14 +7,22 @@
 
 package de.neofonie.cordova.plugin.nativeaudio;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
+import org.apache.cordova.CordovaInterface;
+
+import android.content.Context;
+import android.content.res.AssetManager;
 import android.content.res.AssetFileDescriptor;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.media.MediaPlayer.OnPreparedListener;
+import android.os.Environment;
+import android.net.Uri;
 
 public class NativeAudioAssetComplex implements OnPreparedListener, OnCompletionListener {
 
@@ -29,13 +37,34 @@ public class NativeAudioAssetComplex implements OnPreparedListener, OnCompletion
 	private int state;
     Callable<Void> completeCallback;
 
-	public NativeAudioAssetComplex( AssetFileDescriptor afd, float volume)  throws IOException
+	public NativeAudioAssetComplex( String filePath, float volume, CordovaInterface cordova)  throws IOException
 	{
 		state = INVALID;
 		mp = new MediaPlayer();
         mp.setOnCompletionListener(this);
         mp.setOnPreparedListener(this);
-		mp.setDataSource( afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+
+		
+		if(filePath.startsWith("file://")) {
+			String filePathS = Uri.parse(filePath).getPath();
+			File fp = new File(filePathS);
+            if (fp.exists()) {
+                FileInputStream fileInputStream = new FileInputStream(filePathS);                
+                mp.setDataSource(cordova.getActivity().getApplicationContext(), Uri.parse(filePathS));
+                fileInputStream.close();
+            }
+            else {
+                mp.setDataSource(Environment.getExternalStorageDirectory().getPath() + "/" + filePathS);
+            }
+			
+		}
+		else {
+			Context ctx = cordova.getActivity().getApplicationContext();
+			AssetManager am = ctx.getResources().getAssets();
+			AssetFileDescriptor afd = am.openFd("www/".concat(filePath));
+			mp.setDataSource( afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+		}
+		
 		mp.setAudioStreamType(AudioManager.STREAM_MUSIC); 
 		mp.setVolume(volume, volume);
 		mp.prepare();
