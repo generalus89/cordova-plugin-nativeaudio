@@ -160,7 +160,7 @@ public class NativeAudioAssetComplex implements OnPreparedListener, OnCompletion
 		this.stop();
 		mp.release();
 	}
-	
+
 	public void onPrepared(MediaPlayer mPlayer) 
 	{
 		if (state == PENDING_PLAY) 

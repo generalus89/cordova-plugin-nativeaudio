@@ -20,6 +20,7 @@ import android.media.AudioManager;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.media.MediaRecorder;
+import android.media.audiofx.Visualizer;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
@@ -49,6 +50,7 @@ public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFo
     private static HashMap<String, CallbackContext> completeCallbacks;
 
     private static MediaRecorder mRecorder;
+    private static Visualizer audioOutput;
 
 	private PluginResult executePreload(JSONArray data) {
 		String audioID;
@@ -108,7 +110,7 @@ public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFo
                             }
                             return null;
                         }
-                    });
+					});                
 			} else {
 				return new PluginResult(Status.ERROR, ERROR_NO_AUDIOID);
 			}
@@ -183,14 +185,38 @@ public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFo
 	}
 
 	private PluginResult executeGetCurrentAmplitude(JSONArray data) {
-		String delay;
-		try {
-			delay = data.getString(0);
-			int ampl = mRecorder.getMaxAmplitude();
-			try{Thread.sleep(Integer.parseInt(delay));}catch(InterruptedException ie){ie.printStackTrace();}
-			int ampl2 = mRecorder.getMaxAmplitude();
+		// use MediaRecorder
+		// 
+		// String delay;
+		// try {
+		// 	delay = data.getString(0);
+		// 	int ampl = mRecorder.getMaxAmplitude();
+		// 	try{Thread.sleep(Integer.parseInt(delay));}catch(InterruptedException ie){ie.printStackTrace();}
+		// 	int ampl2 = mRecorder.getMaxAmplitude();
 
-		   	return new PluginResult(Status.OK, String.valueOf(ampl2));
+		//    	return new PluginResult(Status.OK, String.valueOf(ampl2));
+		// } catch (JSONException e) {
+		// 	return new PluginResult(Status.ERROR, e.toString());
+		// }
+
+		// use Visualizer
+		if(audioOutput == null) {
+	        audioOutput = new Visualizer(0); // get output audio stream
+	        audioOutput.setEnabled(true);
+        }
+        String delay;
+		try {
+		 	delay = data.getString(0);
+        	try{Thread.sleep(Integer.parseInt(delay));}catch(InterruptedException ie){ie.printStackTrace();}
+			byte[] bdata = new byte[audioOutput.getCaptureSize()];
+	        audioOutput.getWaveForm(bdata);
+	        int sum = 0;
+	        for(int i=0;i<bdata.length;i++){
+	            sum += bdata[i];
+	       	}
+	        int lvl = sum / bdata.length;
+
+			return new PluginResult(Status.OK, String.valueOf(lvl));
 		} catch (JSONException e) {
 			return new PluginResult(Status.ERROR, e.toString());
 		}
