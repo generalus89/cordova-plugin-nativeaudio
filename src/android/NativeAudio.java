@@ -19,13 +19,13 @@ import android.content.Context;
 import android.media.AudioManager;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.media.MediaRecorder;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.PluginResult;
 import org.apache.cordova.PluginResult.Status;
 import org.json.JSONObject;
-
 
 public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFocusChangeListener {
 
@@ -40,12 +40,15 @@ public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFo
 	public static final String UNLOAD="unload";
     public static final String ADD_COMPLETE_LISTENER="addCompleteListener";
 	public static final String SET_VOLUME_FOR_COMPLEX_ASSET="setVolumeForComplexAsset";
+	public static final String GET_CURRENT_AMPLITUDE="getCurrentAmplitude";
 
 	private static final String LOGTAG = "NativeAudio";
 	
 	private static HashMap<String, NativeAudioAsset> assetMap;
     private static ArrayList<NativeAudioAsset> resumeList;
     private static HashMap<String, CallbackContext> completeCallbacks;
+
+    private static MediaRecorder mRecorder;
 
 	private PluginResult executePreload(JSONArray data) {
 		String audioID;
@@ -178,6 +181,21 @@ public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFo
 		}
 		return new PluginResult(Status.OK);
 	}
+
+	private PluginResult executeGetCurrentAmplitude(JSONArray data) {
+		String delay;
+		try {
+			delay = data.getString(0);
+			int ampl = mRecorder.getMaxAmplitude();
+			try{Thread.sleep(Integer.parseInt(delay));}catch(InterruptedException ie){ie.printStackTrace();}
+			int ampl2 = mRecorder.getMaxAmplitude();
+
+		   	return new PluginResult(Status.OK, String.valueOf(ampl2));
+		} catch (JSONException e) {
+			return new PluginResult(Status.ERROR, e.toString());
+		}
+	}
+
 	@Override
 	protected void pluginInitialize() {
 		AudioManager am = (AudioManager)cordova.getActivity().getSystemService(Context.AUDIO_SERVICE);
@@ -191,6 +209,24 @@ public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFo
 		// Allow android to receive the volume events
 		this.webView.setButtonPlumbedToJs(KeyEvent.KEYCODE_VOLUME_DOWN, false);
 		this.webView.setButtonPlumbedToJs(KeyEvent.KEYCODE_VOLUME_UP, false);
+
+		mRecorder = new MediaRecorder();
+        mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        mRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+        mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+        mRecorder.setOutputFile("/dev/null"); 
+                         
+        try {
+            mRecorder.prepare();
+        } catch (IllegalStateException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+         
+		mRecorder.start();
 	}
 
 	@Override
@@ -245,14 +281,20 @@ public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFo
                     completeCallbacks.put(audioID, callbackContext);
                 } catch (JSONException e) {
                     callbackContext.sendPluginResult(new PluginResult(Status.ERROR, e.toString()));
-		}
-	    } else if (SET_VOLUME_FOR_COMPLEX_ASSET.equals(action)) {
+				}
+	    	} else if (SET_VOLUME_FOR_COMPLEX_ASSET.equals(action)) {
 				cordova.getThreadPool().execute(new Runnable() {
-			public void run() {
-	                        callbackContext.sendPluginResult( executeSetVolumeForComplexAsset(data) );
+					public void run() {
+	                    callbackContext.sendPluginResult( executeSetVolumeForComplexAsset(data) );
                     }
-                 });
-	    }
+                });
+	    	} else if(GET_CURRENT_AMPLITUDE.equals(action)) {
+	    		cordova.getThreadPool().execute(new Runnable() {
+					public void run() {
+	                    callbackContext.sendPluginResult( executeGetCurrentAmplitude(data) );
+                    }
+                });
+	    	}
             else {
                 result = new PluginResult(Status.OK);
             }
