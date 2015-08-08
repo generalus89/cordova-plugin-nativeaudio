@@ -236,23 +236,23 @@ public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFo
 		this.webView.setButtonPlumbedToJs(KeyEvent.KEYCODE_VOLUME_DOWN, false);
 		this.webView.setButtonPlumbedToJs(KeyEvent.KEYCODE_VOLUME_UP, false);
 
-		mRecorder = new MediaRecorder();
-        mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        mRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-        mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-        mRecorder.setOutputFile("/dev/null"); 
+		// mRecorder = new MediaRecorder();
+  //       mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+  //       mRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+  //       mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+  //       mRecorder.setOutputFile("/dev/null"); 
                          
-        try {
-            mRecorder.prepare();
-        } catch (IllegalStateException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+  //       try {
+  //           mRecorder.prepare();
+  //       } catch (IllegalStateException e) {
+  //           // TODO Auto-generated catch block
+  //           e.printStackTrace();
+  //       } catch (IOException e) {
+  //           // TODO Auto-generated catch block
+  //           e.printStackTrace();
+  //       }
          
-		mRecorder.start();
+		// mRecorder.start();
 	}
 
 	@Override
