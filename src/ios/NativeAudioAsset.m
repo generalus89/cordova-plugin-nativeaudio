@@ -1,5 +1,5 @@
 //
-// 
+//
 //  NativeAudioAsset.m
 //  NativeAudioAsset
 //
@@ -7,6 +7,7 @@
 //
 
 #import "NativeAudioAsset.h"
+#import <AVFoundation/AVAudioSession.h>
 
 @implementation NativeAudioAsset
 
@@ -17,7 +18,7 @@ static const CGFloat FADE_DELAY = 0.08;
 {
     self = [super init];
     if(self) {
-        voices = [[NSMutableArray alloc] init];  
+        voices = [[NSMutableArray alloc] init];
         
         NSURL *pathURL = [NSURL fileURLWithPath : path];
         
@@ -46,10 +47,15 @@ static const CGFloat FADE_DELAY = 0.08;
 
 - (void) play
 {
+    AVAudioSession *session = [AVAudioSession sharedInstance];
+    [session setCategory: AVAudioSessionCategoryPlayback error: nil];
+    [session setActive: YES error: nil];
+    
     AVAudioPlayer * player = [voices objectAtIndex:playIndex];
     [player setCurrentTime:0.0];
     player.numberOfLoops = 0;
     [player play];
+    
     playIndex += 1;
     playIndex = playIndex % [voices count];
 }
@@ -129,7 +135,7 @@ static const CGFloat FADE_DELAY = 0.08;
     playIndex = playIndex % [voices count];
 }
 
-- (void) unload 
+- (void) unload
 {
     [self stop];
     for (int x = 0; x < [voices count]; x++) {
@@ -141,10 +147,10 @@ static const CGFloat FADE_DELAY = 0.08;
 
 - (void) setVolume:(NSNumber*) volume;
 {
-
+    
     for (int x = 0; x < [voices count]; x++) {
         AVAudioPlayer * player = [voices objectAtIndex:x];
-
+        
         [player setVolume:volume.floatValue];
     }
 }
