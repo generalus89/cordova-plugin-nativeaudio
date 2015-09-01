@@ -17,6 +17,8 @@
     NSMutableDictionary* completeCallbacks;
 }
 
+@property (strong, nonatomic) AVAudioPlayer *audioPlayer;
+
 - (void) preloadSimple:(CDVInvokedUrlCommand *)command;
 - (void) preloadComplex:(CDVInvokedUrlCommand *)command;
 - (void) play:(CDVInvokedUrlCommand *)command;
@@ -25,5 +27,6 @@
 - (void) unload:(CDVInvokedUrlCommand *)command;
 - (void) setVolumeForComplexAsset:(CDVInvokedUrlCommand *)command;
 - (void) addCompleteListener:(CDVInvokedUrlCommand *)command;
+- (void) getCurrentAmplitude:(CDVInvokedUrlCommand *)command;
 
 @end

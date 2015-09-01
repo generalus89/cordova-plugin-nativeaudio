@@ -17,6 +17,7 @@ NSString* ERROR_REFERENCE_MISSING = @"(NATIVE AUDIO) Asset reference does not ex
 NSString* ERROR_TYPE_RESTRICTED = @"(NATIVE AUDIO) Action restricted to assets loaded using preloadComplex().";
 NSString* ERROR_VOLUME_NIL = @"(NATIVE AUDIO) Volume cannot be empty.";
 NSString* ERROR_VOLUME_FORMAT = @"(NATIVE AUDIO) Volume is declared as float between 0.0 - 1.0";
+NSString* ERROR_AMPLITUTE_RETURNED = @"(NATIVE AUDIO) No Amplitute was detected. Return 0.";
 
 NSString* INFO_ASSET_LOADED = @"(NATIVE AUDIO) Asset loaded.";
 NSString* INFO_ASSET_UNLOADED = @"(NATIVE AUDIO) Asset unloaded.";
@@ -24,6 +25,7 @@ NSString* INFO_PLAYBACK_PLAY = @"(NATIVE AUDIO) Play";
 NSString* INFO_PLAYBACK_STOP = @"(NATIVE AUDIO) Stop";
 NSString* INFO_PLAYBACK_LOOP = @"(NATIVE AUDIO) Loop.";
 NSString* INFO_VOLUME_CHANGED = @"(NATIVE AUDIO) Volume changed.";
+NSString* INFO_AMPLITUTE_RETURNED = @"(NATIVE AUDIO) Amplitute %d was returned.";
 
 - (void)pluginInitialize
 {
@@ -452,6 +454,39 @@ static void (mySystemSoundCompletionProc)(SystemSoundID ssID,void* clientData)
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:callbackId];
         }
     }];
+}
+
+- (void) getCurrentAmplitude:(CDVInvokedUrlCommand *)command{
+    
+    NSString *callbackId = command.callbackId;
+    NSArray* arguments = command.arguments;
+
+    int amplitude = arc4random_uniform(256) - 128;
+    NSNumber *delay = [arguments objectAtIndex:0];
+    
+    //NSLog(@"Delay of: %@",delay);
+    
+    double delayInSeconds = 0.01;
+    dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
+    dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+        //NSLog(@"Return amplitude: %d",amplitude);
+        NSString *RESULT = [NSString stringWithFormat:@"%d",amplitude];
+        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString: RESULT] callbackId:callbackId];
+    });
+
+    
+
+//   NSArray* arguments = command.arguments;
+//        
+//        if([XXX isEqual:nil]) {
+//            
+//            NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", ERROR_AMPl];
+//            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:callbackId];
+//        } else {
+//            
+//        }
+//    }
+
 }
 
 @end
