@@ -27,6 +27,8 @@ NSString* INFO_PLAYBACK_LOOP = @"(NATIVE AUDIO) Loop.";
 NSString* INFO_VOLUME_CHANGED = @"(NATIVE AUDIO) Volume changed.";
 NSString* INFO_AMPLITUTE_RETURNED = @"(NATIVE AUDIO) Amplitute %d was returned.";
 
+NSObject* asset;
+
 - (void)pluginInitialize
 {
     
@@ -195,7 +197,7 @@ NSString* INFO_AMPLITUTE_RETURNED = @"(NATIVE AUDIO) Amplitute %d was returned."
     [self.commandDelegate runInBackground:^{
         if (audioMapping) {
             
-            NSObject* asset = audioMapping[audioID];
+            asset = audioMapping[audioID];
             
             if (asset != nil){
                 if ([asset isKindOfClass:[NativeAudioAsset class]]) {
@@ -460,33 +462,54 @@ static void (mySystemSoundCompletionProc)(SystemSoundID ssID,void* clientData)
     
     NSString *callbackId = command.callbackId;
     NSArray* arguments = command.arguments;
-
-    int amplitude = arc4random_uniform(256) - 128;
-    NSNumber *delay = [arguments objectAtIndex:0];
+    NSString *audioID = [arguments objectAtIndex:0];
+    
+    float amplitude = 100.0;// = arc4random_uniform(256) - 128;
+    
+    if (audioMapping && [audioMapping objectForKey:audioID]) {
+        
+        NSObject* asset = [audioMapping objectForKey:audioID];
+        
+        if (asset != nil){
+            if ([asset isKindOfClass:[NativeAudioAsset class]]) {
+                NativeAudioAsset *_asset = (NativeAudioAsset*) asset;
+                AVAudioPlayer *audioPlayer = [_asset getCurrentAVAudioPlayer];
+                [audioPlayer setMeteringEnabled:YES];
+                
+                if (audioPlayer.playing )
+                {
+                    //NSLog(@"playing at: %f",audioPlayer.currentTime);
+                    [audioPlayer updateMeters];
+                    
+                    float power = 0.0f;
+                    for (int i = 0; i < [audioPlayer numberOfChannels]; i++) {
+                        power += [audioPlayer averagePowerForChannel:i];
+                    }
+                    power /= [audioPlayer numberOfChannels];
+                    //NSLog(@"Normal power: %f",power);
+                    amplitude = -power;
+                }
+                
+            } else {
+                
+            }
+            
+        }
+    }
+    
+    NSNumber *delay = [arguments objectAtIndex:1];
     
     //NSLog(@"Delay of: %@",delay);
     
-    double delayInSeconds = 0.01;
+    double delayInSeconds = 0.1;
     dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
     dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
-        //NSLog(@"Return amplitude: %d",amplitude);
-        NSString *RESULT = [NSString stringWithFormat:@"%d",amplitude];
+        //NSLog(@"Return amplitude: %f",amplitude);
+        //NSString *RESULT = [NSString stringWithFormat:@"%ld",lroundf(amplitude)];
+        NSString *RESULT = [NSString stringWithFormat:@"%f",amplitude];
         [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString: RESULT] callbackId:callbackId];
     });
-
     
-
-//   NSArray* arguments = command.arguments;
-//        
-//        if([XXX isEqual:nil]) {
-//            
-//            NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", ERROR_AMPl];
-//            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:callbackId];
-//        } else {
-//            
-//        }
-//    }
-
 }
 
 @end

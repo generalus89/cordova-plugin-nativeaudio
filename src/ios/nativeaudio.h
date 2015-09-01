@@ -1,5 +1,5 @@
 //
-// 
+//
 //  NativeAudio.h
 //  NativeAudio
 //
@@ -13,7 +13,7 @@
 #import "NativeAudioAsset.h"
 
 @interface NativeAudio : CDVPlugin {
-    NSMutableDictionary* audioMapping; 
+    NSMutableDictionary* audioMapping;
     NSMutableDictionary* completeCallbacks;
 }
 
