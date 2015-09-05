@@ -8,6 +8,8 @@
 
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVAudioPlayer.h>
+#import <AVFoundation/AVAudioEngine.h>
+#import <AVFoundation/AVAudioFile.h>
 
 typedef void (^CompleteCallback)(NSString*);
 
@@ -18,11 +20,14 @@ typedef void (^CompleteCallback)(NSString*);
     CompleteCallback finished;
     NSNumber *initialVolume;
     NSNumber *fadeDelay;
+    AVAudioFile *audioFile;
+    AVAudioEngine *audioEngine;
 }
 
 - (id) initWithPath:(NSString*) path withVoices:(NSNumber*) numVoices withVolume:(NSNumber*) volume withFadeDelay:(NSNumber *)delay;
 - (void) play;
 - (void) playWithFade;
+- (void) playWithPitch: (NSNumber*) pitch;
 - (void) stop;
 - (void) stopWithFade;
 - (void) loop;
