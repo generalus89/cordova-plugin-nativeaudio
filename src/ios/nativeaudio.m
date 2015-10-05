@@ -464,8 +464,10 @@ static void (mySystemSoundCompletionProc)(SystemSoundID ssID,void* clientData)
     NSArray* arguments = command.arguments;
     NSString *audioID = [arguments objectAtIndex:0];
     
-    float amplitude = 100.0;// = arc4random_uniform(256) - 128;
+    //set standard amplitude
+    float amplitude = 0.0f;
     
+    //get audio player
     if (audioMapping && [audioMapping objectForKey:audioID]) {
         
         NSObject* asset = [audioMapping objectForKey:audioID];
@@ -478,16 +480,33 @@ static void (mySystemSoundCompletionProc)(SystemSoundID ssID,void* clientData)
                 
                 if (audioPlayer.playing )
                 {
-                    //NSLog(@"playing at: %f",audioPlayer.currentTime);
+                    //update current audio meter
                     [audioPlayer updateMeters];
                     
-                    float power = 0.0f;
+                    //maximum of all channels
                     for (int i = 0; i < [audioPlayer numberOfChannels]; i++) {
-                        power += [audioPlayer averagePowerForChannel:i];
+                        if (amplitude > [audioPlayer averagePowerForChannel:i])
+                            amplitude = [audioPlayer averagePowerForChannel:i];
                     }
-                    power /= [audioPlayer numberOfChannels];
-                    //NSLog(@"Normal power: %f",power);
-                    amplitude = -power;
+                    //positive value
+                    amplitude = -amplitude;
+                    
+                    //increase spread of amplitute
+                    amplitude *= 10;
+                    amplitude -= 100;
+                    
+                    //normalize to a value between 0.0 (silent) and 1.0 (maximum loud)
+                    amplitude /= 100;
+                    amplitude = 1 - amplitude;
+                    
+                    //cut to big or small values
+                    if (amplitude > 1)
+                        amplitude = 1;
+                    if (amplitude < 0)
+                        amplitude = 0;
+                    
+                    //increase spread of amplitude again
+                    amplitude *= amplitude;
                 }
                 
             } else {
@@ -497,15 +516,15 @@ static void (mySystemSoundCompletionProc)(SystemSoundID ssID,void* clientData)
         }
     }
     
+    //get delay, used?!
     NSNumber *delay = [arguments objectAtIndex:1];
     
-    //NSLog(@"Delay of: %@",delay);
-    
+    //set own delay to 0.1 s
     double delayInSeconds = 0.1;
     dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
     dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
-        //NSLog(@"Return amplitude: %f",amplitude);
-        //NSString *RESULT = [NSString stringWithFormat:@"%ld",lroundf(amplitude)];
+
+        //return result
         NSString *RESULT = [NSString stringWithFormat:@"%f",amplitude];
         [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString: RESULT] callbackId:callbackId];
     });
