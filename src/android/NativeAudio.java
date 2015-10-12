@@ -214,7 +214,13 @@ public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFo
 	        for(int i=0;i<bdata.length;i++){
 	            sum += bdata[i];
 	       	}
-	        int lvl = sum / bdata.length;
+	        double lvl = sum / bdata.length;
+	        lvl += 128.0;
+
+			lvl /= 128.0;
+			if (lvl > 1.0)
+				lvl = 1.0;
+			lvl = Math.pow(lvl, 10);
 
 			return new PluginResult(Status.OK, String.valueOf(lvl));
 		} catch (JSONException e) {
