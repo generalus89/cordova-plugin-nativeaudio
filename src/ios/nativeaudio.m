@@ -17,6 +17,7 @@ NSString* ERROR_REFERENCE_MISSING = @"(NATIVE AUDIO) Asset reference does not ex
 NSString* ERROR_TYPE_RESTRICTED = @"(NATIVE AUDIO) Action restricted to assets loaded using preloadComplex().";
 NSString* ERROR_VOLUME_NIL = @"(NATIVE AUDIO) Volume cannot be empty.";
 NSString* ERROR_VOLUME_FORMAT = @"(NATIVE AUDIO) Volume is declared as float between 0.0 - 1.0";
+NSString* ERROR_AMPLITUTE_RETURNED = @"(NATIVE AUDIO) No Amplitute was detected. Return 0.";
 
 NSString* INFO_ASSET_LOADED = @"(NATIVE AUDIO) Asset loaded.";
 NSString* INFO_ASSET_UNLOADED = @"(NATIVE AUDIO) Asset unloaded.";
@@ -24,6 +25,7 @@ NSString* INFO_PLAYBACK_PLAY = @"(NATIVE AUDIO) Play";
 NSString* INFO_PLAYBACK_STOP = @"(NATIVE AUDIO) Stop";
 NSString* INFO_PLAYBACK_LOOP = @"(NATIVE AUDIO) Loop.";
 NSString* INFO_VOLUME_CHANGED = @"(NATIVE AUDIO) Volume changed.";
+NSString* INFO_AMPLITUTE_RETURNED = @"(NATIVE AUDIO) Amplitute %d was returned.";
 
 - (void)pluginInitialize
 {
@@ -66,7 +68,7 @@ NSString* INFO_VOLUME_CHANGED = @"(NATIVE AUDIO) Volume changed.";
             NSString* path = [NSString stringWithFormat:@"%@", assetPath];
             NSString* pathFromWWW = [NSString stringWithFormat:@"%@/%@", basePath, assetPath];
             if ([path hasPrefix:@"file:///"])
-                path = [path substringFromIndex:8];
+            path = [path substringFromIndex:8];
             
             if ([[NSFileManager defaultManager] fileExistsAtPath : path]) {
                 
@@ -207,7 +209,6 @@ NSString* INFO_VOLUME_CHANGED = @"(NATIVE AUDIO) Volume changed.";
                 } else if ( [asset isKindOfClass:[NSNumber class]] ) {
                     NSNumber *_asset = (NSNumber*) asset;
                     AudioServicesPlaySystemSound([_asset intValue]);
-                    
                     NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", INFO_PLAYBACK_PLAY, audioID];
                     [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString: RESULT] callbackId:callbackId];
                     
@@ -453,6 +454,68 @@ static void (mySystemSoundCompletionProc)(SystemSoundID ssID,void* clientData)
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:callbackId];
         }
     }];
+}
+
+- (void) getCurrentAmplitude:(CDVInvokedUrlCommand *)command{
+    
+    NSString *callbackId = command.callbackId;
+    NSArray* arguments = command.arguments;
+    
+    //set standard amplitude
+    float amplitude = 0.0f;
+    
+    //go through all NativeAudioAssets
+    for (NSObject *asset in audioMapping.allValues){
+        
+        if (asset != nil){
+            if ([asset isKindOfClass:[NativeAudioAsset class]]) {
+                NativeAudioAsset *_asset = (NativeAudioAsset*) asset;
+                
+                //go through all AVAudioPlayers of the current NativeAudioAsset
+                for (AVAudioPlayer *audioPlayer in [_asset getVoices]){
+                    [audioPlayer setMeteringEnabled:YES];
+                    
+                    //only calculate amplitude with running audioPlayers
+                    if ([audioPlayer isPlaying])
+                    {
+                        //update current audio meter
+                        [audioPlayer updateMeters];
+                        //set amplitude to the maximum volume of all channels
+                        for (int i = 0; i < [audioPlayer numberOfChannels]; i++) {
+                            float normalization = [self calculateLinearVolume:[audioPlayer averagePowerForChannel:i]];
+                            if (amplitude < normalization)
+                            amplitude = normalization;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    //get delay, used?!
+    NSNumber *delay = [arguments objectAtIndex:0];
+    
+    //set own delay to 0.001 s
+    double delayInSeconds = 0.001;
+    
+    //trim too big or too small values
+    if (amplitude < 0.0f)
+    amplitude = 0.0f;
+    if (amplitude > 1.0f)
+    amplitude = 1.0f;
+    
+    dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
+    dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+        
+        //return result
+        NSString *RESULT = [NSString stringWithFormat:@"%f",amplitude];
+        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString: RESULT] callbackId:callbackId];
+    });
+    
+}
+
+- (float) calculateLinearVolume:(float) value{
+    return 3.0f * powf(10.0f, value / 20.0f);
 }
 
 @end

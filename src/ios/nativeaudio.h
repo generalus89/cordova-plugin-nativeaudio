@@ -1,5 +1,5 @@
 //
-// 
+//
 //  NativeAudio.h
 //  NativeAudio
 //
@@ -13,9 +13,11 @@
 #import "NativeAudioAsset.h"
 
 @interface NativeAudio : CDVPlugin {
-    NSMutableDictionary* audioMapping; 
+    NSMutableDictionary* audioMapping;
     NSMutableDictionary* completeCallbacks;
 }
+
+@property (strong, nonatomic) AVAudioPlayer *audioPlayer;
 
 - (void) preloadSimple:(CDVInvokedUrlCommand *)command;
 - (void) preloadComplex:(CDVInvokedUrlCommand *)command;
@@ -25,5 +27,6 @@
 - (void) unload:(CDVInvokedUrlCommand *)command;
 - (void) setVolumeForComplexAsset:(CDVInvokedUrlCommand *)command;
 - (void) addCompleteListener:(CDVInvokedUrlCommand *)command;
+- (void) getCurrentAmplitude:(CDVInvokedUrlCommand *)command;
 
 @end
