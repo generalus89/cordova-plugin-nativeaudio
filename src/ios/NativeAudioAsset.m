@@ -146,7 +146,6 @@ static const CGFloat FADE_DELAY = 0.08;
 
 - (void) setVolume:(NSNumber*) volume;
 {
-    
     for (int x = 0; x < [voices count]; x++) {
         AVAudioPlayer * player = [voices objectAtIndex:x];
         
@@ -174,8 +173,8 @@ static const CGFloat FADE_DELAY = 0.08;
     }
 }
 
-- (AVAudioPlayer*) getCurrentAVAudioPlayer{
-    return [voices objectAtIndex:playIndex];
+- (NSMutableArray*) getVoices{
+    return voices;
 }
 
 @end

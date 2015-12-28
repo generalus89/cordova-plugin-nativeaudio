@@ -27,8 +27,6 @@ NSString* INFO_PLAYBACK_LOOP = @"(NATIVE AUDIO) Loop.";
 NSString* INFO_VOLUME_CHANGED = @"(NATIVE AUDIO) Volume changed.";
 NSString* INFO_AMPLITUTE_RETURNED = @"(NATIVE AUDIO) Amplitute %d was returned.";
 
-NSObject* asset;
-
 - (void)pluginInitialize
 {
     
@@ -70,7 +68,7 @@ NSObject* asset;
             NSString* path = [NSString stringWithFormat:@"%@", assetPath];
             NSString* pathFromWWW = [NSString stringWithFormat:@"%@/%@", basePath, assetPath];
             if ([path hasPrefix:@"file:///"])
-                path = [path substringFromIndex:8];
+            path = [path substringFromIndex:8];
             
             if ([[NSFileManager defaultManager] fileExistsAtPath : path]) {
                 
@@ -197,7 +195,7 @@ NSObject* asset;
     [self.commandDelegate runInBackground:^{
         if (audioMapping) {
             
-            asset = audioMapping[audioID];
+            NSObject* asset = audioMapping[audioID];
             
             if (asset != nil){
                 if ([asset isKindOfClass:[NativeAudioAsset class]]) {
@@ -210,7 +208,6 @@ NSObject* asset;
                 } else if ( [asset isKindOfClass:[NSNumber class]] ) {
                     NSNumber *_asset = (NSNumber*) asset;
                     AudioServicesPlaySystemSound([_asset intValue]);
-                    
                     NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", INFO_PLAYBACK_PLAY, audioID];
                     [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString: RESULT] callbackId:callbackId];
                     
@@ -462,73 +459,62 @@ static void (mySystemSoundCompletionProc)(SystemSoundID ssID,void* clientData)
     
     NSString *callbackId = command.callbackId;
     NSArray* arguments = command.arguments;
-    NSString *audioID = [arguments objectAtIndex:0];
     
     //set standard amplitude
     float amplitude = 0.0f;
     
-    //get audio player
-    if (audioMapping && [audioMapping objectForKey:audioID]) {
-        
-        NSObject* asset = [audioMapping objectForKey:audioID];
+    //go through all NativeAudioAssets
+    for (NSObject *asset in audioMapping.allValues){
         
         if (asset != nil){
             if ([asset isKindOfClass:[NativeAudioAsset class]]) {
                 NativeAudioAsset *_asset = (NativeAudioAsset*) asset;
-                AVAudioPlayer *audioPlayer = [_asset getCurrentAVAudioPlayer];
-                [audioPlayer setMeteringEnabled:YES];
                 
-                if (audioPlayer.playing )
-                {
-                    //update current audio meter
-                    [audioPlayer updateMeters];
+                //go through all AVAudioPlayers of the current NativeAudioAsset
+                for (AVAudioPlayer *audioPlayer in [_asset getVoices]){
+                    [audioPlayer setMeteringEnabled:YES];
                     
-                    //maximum of all channels
-                    for (int i = 0; i < [audioPlayer numberOfChannels]; i++) {
-                        if (amplitude > [audioPlayer averagePowerForChannel:i])
-                            amplitude = [audioPlayer averagePowerForChannel:i];
+                    //only calculate amplitude with running audioPlayers
+                    if ([audioPlayer isPlaying])
+                    {
+                        //update current audio meter
+                        [audioPlayer updateMeters];
+                        //set amplitude to the maximum volume of all channels
+                        for (int i = 0; i < [audioPlayer numberOfChannels]; i++) {
+                            float normalization = [self calculateLinearVolume:[audioPlayer averagePowerForChannel:i]];
+                            if (amplitude < normalization)
+                            amplitude = normalization;
+                        }
                     }
-                    //positive value
-                    amplitude = -amplitude;
-                    
-                    //increase spread of amplitute
-                    amplitude *= 10;
-                    amplitude -= 100;
-                    
-                    //normalize to a value between 0.0 (silent) and 1.0 (maximum loud)
-                    amplitude /= 100;
-                    amplitude = 1 - amplitude;
-                    
-                    //cut to big or small values
-                    if (amplitude > 1)
-                        amplitude = 1;
-                    if (amplitude < 0)
-                        amplitude = 0;
-                    
-                    //increase spread of amplitude again
-                    amplitude *= amplitude;
                 }
-                
-            } else {
-                
             }
-            
         }
     }
     
     //get delay, used?!
-    NSNumber *delay = [arguments objectAtIndex:1];
+    NSNumber *delay = [arguments objectAtIndex:0];
     
-    //set own delay to 0.1 s
-    double delayInSeconds = 0.1;
+    //set own delay to 0.001 s
+    double delayInSeconds = 0.001;
+    
+    //trim too big or too small values
+    if (amplitude < 0.0f)
+    amplitude = 0.0f;
+    if (amplitude > 1.0f)
+    amplitude = 1.0f;
+    
     dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
     dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
-
+        
         //return result
         NSString *RESULT = [NSString stringWithFormat:@"%f",amplitude];
         [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString: RESULT] callbackId:callbackId];
     });
     
+}
+
+- (float) calculateLinearVolume:(float) value{
+    return 3.0f * powf(10.0f, value / 20.0f);
 }
 
 @end
