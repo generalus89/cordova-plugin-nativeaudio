@@ -240,7 +240,7 @@ public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFo
 		}
 	}
 
-	private PluginResult executeSpeak(JSONArray data)
+	private PluginResult executeSpeak(JSONArray data, CallbackContext callbackContext)
 			throws JSONException, NullPointerException {
 		JSONObject params = data.getJSONObject(0);
 
@@ -432,7 +432,7 @@ public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFo
 	    	} else if(SPEAK.equals(action)) {
 	    		cordova.getThreadPool().execute(new Runnable() {
 					public void run() {
-	                    callbackContext.sendPluginResult( executeSpeak(data) );
+	                    callbackContext.sendPluginResult( executeSpeak(data, callbackContext) );
                     }
                 });
 	    	} else if(STOP_SPEAK.equals(action)) {
