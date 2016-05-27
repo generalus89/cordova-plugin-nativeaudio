@@ -10,6 +10,7 @@ package de.neofonie.cordova.plugin.nativeaudio;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.concurrent.Callable;
 
 import org.json.JSONArray;
@@ -240,13 +241,12 @@ public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFo
 		}
 	}
 
-	private PluginResult executeSpeak(JSONArray data, CallbackContext callbackContext)
+	private PluginResult executeSpeak(JSONArray data, String callbackId)
 			throws JSONException, NullPointerException {
 		JSONObject params = data.getJSONObject(0);
 
         if (params == null) {
-            callbackContext.error(ERR_INVALID_OPTIONS);
-            return;
+            return new PluginResult(Status.ERROR, ERR_INVALID_OPTIONS);
         }
 
         String text;
@@ -255,8 +255,7 @@ public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFo
         double pitch;
 
         if (params.isNull("text")) {
-            callbackContext.error(ERR_INVALID_OPTIONS);
-            return;
+            return new PluginResult(Status.ERROR, ERR_INVALID_OPTIONS);
         } else {
             text = params.getString("text");
         }
@@ -280,31 +279,33 @@ public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFo
         }
 
         if (tts == null) {
-            callbackContext.error(ERR_ERROR_INITIALIZING);
-            return;
+            return new PluginResult(Status.ERROR, ERR_ERROR_INITIALIZING);
         }
 
         if (!ttsInitialized) {
-            callbackContext.error(ERR_NOT_INITIALIZED);
-            return;
+            return new PluginResult(Status.ERROR, ERR_NOT_INITIALIZED);
         }
 
         HashMap<String, String> ttsParams = new HashMap<String, String>();
-        ttsParams.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, callbackContext.getCallbackId());
+        ttsParams.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, callbackId);
 
         String[] localeArgs = locale.split("-");
         tts.setLanguage(new Locale(localeArgs[0], localeArgs[1]));
         tts.setSpeechRate((float) rate);
 
         tts.speak(text, TextToSpeech.QUEUE_FLUSH, ttsParams);
+        return new PluginResult(Status.OK);
 	}
 
 	private PluginResult executeStopSpeak(JSONArray data)
 	{
-		if (tts != null)
-		{
-			tts.stop();
-		}
+
+		if (tts == null) {
+            return new PluginResult(Status.ERROR, ERR_ERROR_INITIALIZING);
+        }
+
+		tts.stop();
+		return new PluginResult(Status.OK);
 	}
 
 	@Override
@@ -332,7 +333,7 @@ public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFo
             @Override
             public void onDone(String callbackId) {
                 if (!callbackId.equals("")) {
-                    CallbackContext context = new CallbackContext(callbackId, this.webView);
+                    CallbackContext context = new CallbackContext(callbackId, NativeAudio.this.webView);
                     context.success();
                 }
             }
@@ -340,7 +341,7 @@ public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFo
             @Override
             public void onError(String callbackId) {
                 if (!callbackId.equals("")) {
-                    CallbackContext context = new CallbackContext(callbackId, this.webView);
+                    CallbackContext context = new CallbackContext(callbackId, NativeAudio.this.webView);
                     context.error(ERR_UNKNOWN);
                 }
             }
@@ -432,7 +433,13 @@ public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFo
 	    	} else if(SPEAK.equals(action)) {
 	    		cordova.getThreadPool().execute(new Runnable() {
 					public void run() {
-	                    callbackContext.sendPluginResult( executeSpeak(data, callbackContext) );
+						try {
+	                    	callbackContext.sendPluginResult( executeSpeak(data, callbackContext.getCallbackId()) );
+	                    }
+	                    catch (JSONException e)
+	                    {
+	                    	Log.e(LOGTAG, e.toString());
+	                    }
                     }
                 });
 	    	} else if(STOP_SPEAK.equals(action)) {
