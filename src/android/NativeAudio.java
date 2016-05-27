@@ -21,6 +21,9 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.media.MediaRecorder;
 import android.media.audiofx.Visualizer;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.TextToSpeech.OnInitListener;
+import android.speech.tts.UtteranceProgressListener;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
@@ -28,11 +31,15 @@ import org.apache.cordova.PluginResult;
 import org.apache.cordova.PluginResult.Status;
 import org.json.JSONObject;
 
-public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFocusChangeListener {
+public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFocusChangeListener, OnInitListener {
 
 	public static final String ERROR_NO_AUDIOID="A reference does not exist for the specified audio id.";
 	public static final String ERROR_AUDIOID_EXISTS="A reference already exists for the specified audio id.";
-	
+	public static final String ERR_INVALID_OPTIONS = "ERR_INVALID_OPTIONS";
+    public static final String ERR_NOT_INITIALIZED = "ERR_NOT_INITIALIZED";
+    public static final String ERR_ERROR_INITIALIZING = "ERR_ERROR_INITIALIZING";
+    public static final String ERR_UNKNOWN = "ERR_UNKNOWN";
+    
 	public static final String PRELOAD_SIMPLE="preloadSimple";
 	public static final String PRELOAD_COMPLEX="preloadComplex";
 	public static final String PLAY="play";
@@ -42,6 +49,8 @@ public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFo
     public static final String ADD_COMPLETE_LISTENER="addCompleteListener";
 	public static final String SET_VOLUME_FOR_COMPLEX_ASSET="setVolumeForComplexAsset";
 	public static final String GET_CURRENT_AMPLITUDE="getCurrentAmplitude";
+	public static final String SPEAK="speak";
+	public static final String STOP_SPEAK="stopSpeak";
 
 	private static final String LOGTAG = "NativeAudio";
 	
@@ -51,6 +60,9 @@ public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFo
 
     private static MediaRecorder mRecorder;
     private static Visualizer audioOutput;
+
+    private boolean ttsInitialized = false;
+    private TextToSpeech tts = null;
 
 	private PluginResult executePreload(JSONArray data) {
 		String audioID;
@@ -228,6 +240,73 @@ public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFo
 		}
 	}
 
+	private PluginResult executeSpeak(JSONArray data)
+			throws JSONException, NullPointerException {
+		JSONObject params = data.getJSONObject(0);
+
+        if (params == null) {
+            callbackContext.error(ERR_INVALID_OPTIONS);
+            return;
+        }
+
+        String text;
+        String locale;
+        double rate;
+        double pitch;
+
+        if (params.isNull("text")) {
+            callbackContext.error(ERR_INVALID_OPTIONS);
+            return;
+        } else {
+            text = params.getString("text");
+        }
+
+        if (params.isNull("locale")) {
+            locale = "en-US";
+        } else {
+            locale = params.getString("locale");
+        }
+
+        if (params.isNull("rate")) {
+            rate = 1.0;
+        } else {
+            rate = params.getDouble("rate");
+        }
+
+        if (params.isNull("pitch")) {
+            rate = 1.0;
+        } else {
+            rate = params.getDouble("pitch");
+        }
+
+        if (tts == null) {
+            callbackContext.error(ERR_ERROR_INITIALIZING);
+            return;
+        }
+
+        if (!ttsInitialized) {
+            callbackContext.error(ERR_NOT_INITIALIZED);
+            return;
+        }
+
+        HashMap<String, String> ttsParams = new HashMap<String, String>();
+        ttsParams.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, callbackContext.getCallbackId());
+
+        String[] localeArgs = locale.split("-");
+        tts.setLanguage(new Locale(localeArgs[0], localeArgs[1]));
+        tts.setSpeechRate((float) rate);
+
+        tts.speak(text, TextToSpeech.QUEUE_FLUSH, ttsParams);
+	}
+
+	private PluginResult executeSpeak(JSONArray data)
+	{
+		if (tts != null)
+		{
+			tts.stop();
+		}
+	}
+
 	@Override
 	protected void pluginInitialize() {
 		AudioManager am = (AudioManager)cordova.getActivity().getSystemService(Context.AUDIO_SERVICE);
@@ -242,6 +321,30 @@ public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFo
 		this.webView.setButtonPlumbedToJs(KeyEvent.KEYCODE_VOLUME_DOWN, false);
 		this.webView.setButtonPlumbedToJs(KeyEvent.KEYCODE_VOLUME_UP, false);
 
+		// Text to speech addition
+		tts = new TextToSpeech(cordova.getActivity().getApplicationContext(), this);
+        tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
+            @Override
+            public void onStart(String s) {
+                // do nothing
+            }
+
+            @Override
+            public void onDone(String callbackId) {
+                if (!callbackId.equals("")) {
+                    CallbackContext context = new CallbackContext(callbackId, this.webView);
+                    context.success();
+                }
+            }
+
+            @Override
+            public void onError(String callbackId) {
+                if (!callbackId.equals("")) {
+                    CallbackContext context = new CallbackContext(callbackId, this.webView);
+                    context.error(ERR_UNKNOWN);
+                }
+            }
+        });
 		// mRecorder = new MediaRecorder();
   //       mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
   //       mRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
@@ -326,6 +429,18 @@ public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFo
 	                    callbackContext.sendPluginResult( executeGetCurrentAmplitude(data) );
                     }
                 });
+	    	} else if(SPEAK.equals(action)) {
+	    		cordova.getThreadPool().execute(new Runnable() {
+					public void run() {
+	                    callbackContext.sendPluginResult( executeSpeak(data) );
+                    }
+                });
+	    	} else if(STOP_SPEAK.equals(action)) {
+	    		cordova.getThreadPool().execute(new Runnable() {
+					public void run() {
+	                    callbackContext.sendPluginResult( executeStopSpeak(data) );
+                    }
+                });
 	    	}
             else {
                 result = new PluginResult(Status.OK);
@@ -337,6 +452,21 @@ public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFo
 		if(result != null) callbackContext.sendPluginResult( result );
 		return true;
 	}
+
+	@Override
+    public void onInit(int status) {
+        if (status != TextToSpeech.SUCCESS) {
+            tts = null;
+        } else {
+            // warm up the tts engine with an empty string
+            HashMap<String, String> ttsParams = new HashMap<String, String>();
+            ttsParams.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "");
+            tts.setLanguage(new Locale("en", "US"));
+            tts.speak("", TextToSpeech.QUEUE_FLUSH, ttsParams);
+
+            ttsInitialized = true;
+        }
+    }
 
 	private void initSoundPool() {
 
