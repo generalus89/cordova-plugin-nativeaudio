@@ -59,5 +59,19 @@ module.exports  = {
 
     getCurrentAmplitude: function(delay, successCallback, errorCallback) {
         return cordova.exec(successCallback, errorCallback, "NativeAudio", "getCurrentAmplitude", [delay]);
+    },
+    speak: function (parameters, successCallback, errorCallback) {
+        var options = {};
+
+        if (typeof parameters == 'string') {
+            options.text = parameters;
+        } else {
+            options = parameters;
+        }
+
+        return cordova.exec(successCallback, errorCallback, 'NativeAudio', 'speak', [options]);
+    },
+    stopSpeak: function (parameters, successCallback, errorCallback) {
+        return cordova.exec(successCallback, errorCallback, 'NativeAudio', 'stopSpeak', [parameters]);
     }
 };

@@ -45,12 +45,17 @@ NSString* INFO_AMPLITUTE_RETURNED = @"(NATIVE AUDIO) Amplitute %d was returned."
     }
     
     [session setActive: YES error: nil];
+    
+    //initialize TextToSpeech
+    synthesizer = [AVSpeechSynthesizer new];
+    synthesizer.delegate = self;
+    speechAmplitude = 0.0f;
 }
 
 - (void) preloadSimple:(CDVInvokedUrlCommand *)command
 {
     
-    NSString *callbackId = command.callbackId;
+    NSString *localCallbackId = command.callbackId;
     NSArray* arguments = command.arguments;
     NSString *audioID = [arguments objectAtIndex:0];
     NSString *assetPath = [arguments objectAtIndex:1];
@@ -80,7 +85,7 @@ NSString* INFO_AMPLITUTE_RETURNED = @"(NATIVE AUDIO) Amplitute %d was returned."
                 audioMapping[audioID] = [NSNumber numberWithInt:soundID];
                 
                 NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", INFO_ASSET_LOADED, audioID];
-                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString: RESULT] callbackId:callbackId];
+                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString: RESULT] callbackId:localCallbackId];
                 
             } else if ([[NSFileManager defaultManager] fileExistsAtPath : pathFromWWW]) {
                 NSURL *pathURL = [NSURL fileURLWithPath : pathFromWWW];
@@ -90,16 +95,16 @@ NSString* INFO_AMPLITUTE_RETURNED = @"(NATIVE AUDIO) Amplitute %d was returned."
                 audioMapping[audioID] = [NSNumber numberWithInt:soundID];
                 
                 NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", INFO_ASSET_LOADED, audioID];
-                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString: RESULT] callbackId:callbackId];
+                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString: RESULT] callbackId:localCallbackId];
                 
             } else {
                 NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", ERROR_ASSETPATH_INCORRECT, assetPath];
-                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:callbackId];
+                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:localCallbackId];
             }
         } else {
             
             NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", ERROR_REFERENCE_EXISTS, audioID];
-            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:callbackId];
+            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:localCallbackId];
         }
         
     }];
@@ -109,7 +114,7 @@ NSString* INFO_AMPLITUTE_RETURNED = @"(NATIVE AUDIO) Amplitute %d was returned."
 
 - (void) preloadComplex:(CDVInvokedUrlCommand *)command
 {
-    NSString *callbackId = command.callbackId;
+    NSString *localCallbackId = command.callbackId;
     NSArray* arguments = command.arguments;
     NSString *audioID = [arguments objectAtIndex:0];
     NSString *assetPath = [arguments objectAtIndex:1];
@@ -171,16 +176,16 @@ NSString* INFO_AMPLITUTE_RETURNED = @"(NATIVE AUDIO) Amplitute %d was returned."
                 audioMapping[audioID] = asset;
                 
                 NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", INFO_ASSET_LOADED, audioID];
-                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString: RESULT] callbackId:callbackId];
+                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString: RESULT] callbackId:localCallbackId];
                 
             } else {
                 NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", ERROR_ASSETPATH_INCORRECT, assetPath];
-                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:callbackId];
+                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:localCallbackId];
             }
         } else {
             
             NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", ERROR_REFERENCE_EXISTS, audioID];
-            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:callbackId];
+            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:localCallbackId];
         }
         
     }];
@@ -188,7 +193,7 @@ NSString* INFO_AMPLITUTE_RETURNED = @"(NATIVE AUDIO) Amplitute %d was returned."
 
 - (void) play:(CDVInvokedUrlCommand *)command
 {
-    NSString *callbackId = command.callbackId;
+    NSString *localCallbackId = command.callbackId;
     NSArray* arguments = command.arguments;
     NSString *audioID = [arguments objectAtIndex:0];
     
@@ -204,32 +209,32 @@ NSString* INFO_AMPLITUTE_RETURNED = @"(NATIVE AUDIO) Amplitute %d was returned."
                     //[_asset playWithPitch: [NSNumber numberWithFloat: 1000.0f]];
                     
                     NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", INFO_PLAYBACK_PLAY, audioID];
-                    [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString: RESULT] callbackId:callbackId];
+                    [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString: RESULT] callbackId:localCallbackId];
                     
                 } else if ( [asset isKindOfClass:[NSNumber class]] ) {
                     NSNumber *_asset = (NSNumber*) asset;
                     AudioServicesPlaySystemSound([_asset intValue]);
                     NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", INFO_PLAYBACK_PLAY, audioID];
-                    [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString: RESULT] callbackId:callbackId];
+                    [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString: RESULT] callbackId:localCallbackId];
                     
                 }
             } else {
                 
                 NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", ERROR_REFERENCE_MISSING, audioID];
-                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:callbackId];
+                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:localCallbackId];
             }
             
         } else {
             
             NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", ERROR_REFERENCE_MISSING, audioID];
-            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:callbackId];
+            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:localCallbackId];
         }
     }];
 }
 
 - (void) stop:(CDVInvokedUrlCommand *)command
 {
-    NSString *callbackId = command.callbackId;
+    NSString *localCallbackId = command.callbackId;
     NSArray* arguments = command.arguments;
     NSString *audioID = [arguments objectAtIndex:0];
     
@@ -243,29 +248,29 @@ NSString* INFO_AMPLITUTE_RETURNED = @"(NATIVE AUDIO) Amplitute %d was returned."
                 [_asset stop];
                 
                 NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", INFO_PLAYBACK_STOP, audioID];
-                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString: RESULT] callbackId:callbackId];
+                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString: RESULT] callbackId:localCallbackId];
                 
             } else if ( [asset isKindOfClass:[NSNumber class]] ) {
                 
                 NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", ERROR_TYPE_RESTRICTED, audioID];
-                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:callbackId];
+                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:localCallbackId];
                 
             }
             
         } else {
             
             NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", ERROR_REFERENCE_MISSING, audioID];
-            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:callbackId];
+            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:localCallbackId];
         }
     } else {
         NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", ERROR_REFERENCE_MISSING, audioID];
-        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:callbackId];    }
+        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:localCallbackId];    }
 }
 
 - (void) loop:(CDVInvokedUrlCommand *)command
 {
     
-    NSString *callbackId = command.callbackId;
+    NSString *localCallbackId = command.callbackId;
     NSArray* arguments = command.arguments;
     NSString *audioID = [arguments objectAtIndex:0];
     
@@ -280,21 +285,21 @@ NSString* INFO_AMPLITUTE_RETURNED = @"(NATIVE AUDIO) Amplitute %d was returned."
                 NativeAudioAsset *_asset = (NativeAudioAsset*) asset;
                 [_asset loop];
                 NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", INFO_PLAYBACK_LOOP, audioID];
-                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString: RESULT] callbackId:callbackId];
+                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString: RESULT] callbackId:localCallbackId];
                 
             } else if ( [asset isKindOfClass:[NSNumber class]] ) {
                 NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", ERROR_TYPE_RESTRICTED, audioID];
-                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:callbackId];
+                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:localCallbackId];
             }
             
             else {
                 
                 NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", ERROR_REFERENCE_MISSING, audioID];
-                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:callbackId];
+                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:localCallbackId];
             }
         } else {
             NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", ERROR_REFERENCE_MISSING, audioID];
-            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:callbackId];
+            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:localCallbackId];
         };
     }
 }
@@ -302,7 +307,7 @@ NSString* INFO_AMPLITUTE_RETURNED = @"(NATIVE AUDIO) Amplitute %d was returned."
 - (void) unload:(CDVInvokedUrlCommand *)command
 {
     
-    NSString *callbackId = command.callbackId;
+    NSString *localCallbackId = command.callbackId;
     NSArray* arguments = command.arguments;
     NSString *audioID = [arguments objectAtIndex:0];
     
@@ -323,23 +328,23 @@ NSString* INFO_AMPLITUTE_RETURNED = @"(NATIVE AUDIO) Amplitute %d was returned."
         } else {
             
             NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", ERROR_REFERENCE_MISSING, audioID];
-            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:callbackId];
+            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:localCallbackId];
         }
         
         [audioMapping removeObjectForKey: audioID];
         
         NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", INFO_ASSET_UNLOADED, audioID];
-        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString: RESULT] callbackId:callbackId];
+        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString: RESULT] callbackId:localCallbackId];
     } else {
         NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", ERROR_REFERENCE_MISSING, audioID];
-        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:callbackId];
+        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:localCallbackId];
     }
     
 }
 
 - (void) setVolumeForComplexAsset:(CDVInvokedUrlCommand *)command
 {
-    NSString *callbackId = command.callbackId;
+    NSString *localCallbackId = command.callbackId;
     NSArray* arguments = command.arguments;
     NSString *audioID = [arguments objectAtIndex:0];
     NSNumber *volume = nil;
@@ -351,12 +356,12 @@ NSString* INFO_AMPLITUTE_RETURNED = @"(NATIVE AUDIO) Amplitute %d was returned."
         if([volume isEqual:nil]) {
             
             NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", ERROR_VOLUME_NIL, audioID];
-            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:callbackId];
+            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:localCallbackId];
         }
     } else if (([volume floatValue] < 0.0f) || ([volume floatValue] > 1.0f)) {
         
         NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", ERROR_VOLUME_FORMAT, audioID];
-        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:callbackId];
+        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:localCallbackId];
     }
     
     if ( audioMapping ) {
@@ -369,30 +374,30 @@ NSString* INFO_AMPLITUTE_RETURNED = @"(NATIVE AUDIO) Amplitute %d was returned."
                 [_asset setVolume:volume];
                 
                 NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", INFO_VOLUME_CHANGED, audioID];
-                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString: RESULT] callbackId:callbackId];
+                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString: RESULT] callbackId:localCallbackId];
                 
             } else if ( [asset isKindOfClass:[NSNumber class]] ) {
                 
                 NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", ERROR_TYPE_RESTRICTED, audioID];
-                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:callbackId];
+                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:localCallbackId];
                 
             }
             
         } else {
             
             NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", ERROR_REFERENCE_MISSING, audioID];
-            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:callbackId];
+            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:localCallbackId];
         }
     } else {
         NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", ERROR_REFERENCE_MISSING, audioID];
-        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:callbackId];    }
+        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:localCallbackId];    }
 }
 
 - (void) sendCompleteCallback:(NSString*)forId {
-    NSString* callbackId = self->completeCallbacks[forId];
-    if (callbackId) {
+    NSString* localCallbackId = self->completeCallbacks[forId];
+    if (localCallbackId) {
         NSDictionary* RESULT = [NSDictionary dictionaryWithObject:forId forKey:@"id"];
-        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:RESULT] callbackId:callbackId];
+        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:RESULT] callbackId:localCallbackId];
         [self->completeCallbacks removeObjectForKey:forId];
     }
 }
@@ -412,7 +417,7 @@ static void (mySystemSoundCompletionProc)(SystemSoundID ssID,void* clientData)
 
 - (void) addCompleteListener:(CDVInvokedUrlCommand *)command
 {
-    NSString *callbackId = command.callbackId;
+    NSString *localCallbackId = command.callbackId;
     NSArray* arguments = command.arguments;
     NSString *audioID = [arguments objectAtIndex:0];
     
@@ -445,24 +450,26 @@ static void (mySystemSoundCompletionProc)(SystemSoundID ssID,void* clientData)
             } else {
                 
                 NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", ERROR_REFERENCE_MISSING, audioID];
-                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:callbackId];
+                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:localCallbackId];
             }
             
         } else {
             
             NSString *RESULT = [NSString stringWithFormat:@"%@ (%@)", ERROR_REFERENCE_MISSING, audioID];
-            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:callbackId];
+            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: RESULT] callbackId:localCallbackId];
         }
     }];
 }
 
 - (void) getCurrentAmplitude:(CDVInvokedUrlCommand *)command{
     
-    NSString *callbackId = command.callbackId;
+    NSString *localCallbackId = command.callbackId;
     NSArray* arguments = command.arguments;
     
     //set standard amplitude
     float amplitude = 0.0f;
+    //indicates if any file is played
+    BOOL filePlaying = false;
     
     //go through all NativeAudioAssets
     for (NSObject *asset in audioMapping.allValues){
@@ -478,6 +485,9 @@ static void (mySystemSoundCompletionProc)(SystemSoundID ssID,void* clientData)
                     //only calculate amplitude with running audioPlayers
                     if ([audioPlayer isPlaying])
                     {
+                        //found a file which is playing
+                        filePlaying = true;
+                        
                         //update current audio meter
                         [audioPlayer updateMeters];
                         //set amplitude to the maximum volume of all channels
@@ -507,15 +517,101 @@ static void (mySystemSoundCompletionProc)(SystemSoundID ssID,void* clientData)
     dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
     dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
         
+        NSString *RESULT;
+        if(!filePlaying && speechAmplitude > 0.0f){
+            float randomizedSpeechAmplitude = speechAmplitude + (arc4random_uniform(40.0f))/100.0f;
+            RESULT = [NSString stringWithFormat:@"%f",randomizedSpeechAmplitude];
+        } else {
+            RESULT = [NSString stringWithFormat:@"%f",amplitude];
+        }
         //return result
-        NSString *RESULT = [NSString stringWithFormat:@"%f",amplitude];
-        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString: RESULT] callbackId:callbackId];
+        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString: RESULT] callbackId:localCallbackId];
     });
     
 }
 
 - (float) calculateLinearVolume:(float) value{
     return 3.0f * powf(10.0f, value / 20.0f);
+}
+
+#pragma mark - Text to speech
+
+-(void)stopSpeak:(CDVInvokedUrlCommand*)command{
+    [synthesizer stopSpeakingAtBoundary:AVSpeechBoundaryWord];
+}
+
+- (void)speak:(CDVInvokedUrlCommand*)command {
+    [[AVAudioSession sharedInstance] setActive:NO withOptions:0 error:nil];
+    [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback
+                                     withOptions:AVAudioSessionCategoryOptionDuckOthers error:nil];
+    
+    if (callbackId) {
+        lastCallbackId = callbackId;
+    }
+    callbackId = command.callbackId;
+    
+    [synthesizer stopSpeakingAtBoundary:AVSpeechBoundaryImmediate];
+    
+    NSDictionary* options = [command.arguments objectAtIndex:0];
+    
+    NSString* text = [options objectForKey:@"text"];
+    NSString* locale = [options objectForKey:@"locale"];
+    double rate = [[options objectForKey:@"rate"] doubleValue];
+    double pitch = [[options objectForKey:@"pitch"] doubleValue];
+    
+    if (!locale || (id)locale == [NSNull null]) {
+        locale = @"en-US";
+    }
+    
+    if (!rate) {
+        rate = 1.0;
+    }
+    
+    AVSpeechUtterance* utterance = [[AVSpeechUtterance new] initWithString:text];
+    utterance.voice = [AVSpeechSynthesisVoice voiceWithLanguage:locale];
+    // Rate expression adjusted manually for a closer match to other platform.
+    utterance.rate = (AVSpeechUtteranceMinimumSpeechRate * 1.5 + AVSpeechUtteranceDefaultSpeechRate) / 2.5 * rate * rate;
+    utterance.pitchMultiplier = pitch;
+    [synthesizer speakUtterance:utterance];
+    speechAmplitude = 0.5f;
+    lastLocation = 0;
+}
+
+#pragma mark - AVSpeechSynthesizerDelegate
+
+- (void)speechSynthesizer:(AVSpeechSynthesizer*)synthesizer didFinishSpeechUtterance:(AVSpeechUtterance*)utterance {
+    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+    speechAmplitude = 0.0f;
+    if (lastCallbackId) {
+        [self.commandDelegate sendPluginResult:result callbackId:lastCallbackId];
+        lastCallbackId = nil;
+    } else {
+        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+        callbackId = nil;
+    }
+    
+    [[AVAudioSession sharedInstance] setActive:NO withOptions:0 error:nil];
+    [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryAmbient
+                                     withOptions: 0 error: nil];
+    [[AVAudioSession sharedInstance] setActive:YES withOptions: 0 error:nil];
+}
+
+-(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer willSpeakRangeOfSpeechString:(NSRange)characterRange utterance:(AVSpeechUtterance *)utterance{
+    if (utterance.speechString.length <= characterRange.location + characterRange.length + 1){
+        NSUInteger characters = characterRange.length;
+        //do some adjustments for rate to fit the real end of the speech
+        float rate = utterance.rate;
+        if (rate < 0.01)
+            rate *=70.0f;
+        else
+            rate *=0.6f;
+        double delay = characters * rate / 2;
+        //stop speech a little bit after end of this method
+        dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC));
+        dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+            speechAmplitude = 0.0f;
+        });
+    }
 }
 
 @end
