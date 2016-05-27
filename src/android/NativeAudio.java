@@ -299,7 +299,7 @@ public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFo
         tts.speak(text, TextToSpeech.QUEUE_FLUSH, ttsParams);
 	}
 
-	private PluginResult executeSpeak(JSONArray data)
+	private PluginResult executeStopSpeak(JSONArray data)
 	{
 		if (tts != null)
 		{
