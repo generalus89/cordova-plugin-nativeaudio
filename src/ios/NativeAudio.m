@@ -28,7 +28,7 @@ NSString* INFO_VOLUME_CHANGED = @"(NATIVE AUDIO) Volume changed.";
 NSString* INFO_AMPLITUTE_RETURNED = @"(NATIVE AUDIO) Amplitute %d was returned.";
 
 - (void)pluginInitialize
-
+{
     self.fadeMusic = NO;
 
     AudioSessionInitialize(NULL, NULL, nil , nil);

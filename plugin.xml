@@ -53,6 +53,11 @@
             </feature>
         </config-file>
 
+        <preference name="MICROPHONE_USAGE_DESCRIPTION" default="This app needs microphone access"/>
+        <config-file target="*-Info.plist" parent="NSMicrophoneUsageDescription">
+            <string>$MICROPHONE_USAGE_DESCRIPTION</string>
+        </config-file>
+            
         <framework src="Foundation.framework"/>
         <framework src="AVFoundation.framework"/>
         <framework src="AudioToolbox.framework"/>
