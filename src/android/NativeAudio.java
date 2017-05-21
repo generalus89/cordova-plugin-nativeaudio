@@ -5,7 +5,7 @@
 //  Created by Sidney Bofah on 2014-06-26.
 //
 
-package de.neofonie.cordova.plugin.nativeaudio;
+package com.rjfun.cordova.plugin.nativeaudio;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,13 +34,16 @@ import org.json.JSONObject;
 
 public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFocusChangeListener, OnInitListener {
 
+    /* options */
+    public static final String OPT_FADE_MUSIC = "fadeMusic";
+
 	public static final String ERROR_NO_AUDIOID="A reference does not exist for the specified audio id.";
 	public static final String ERROR_AUDIOID_EXISTS="A reference already exists for the specified audio id.";
 	public static final String ERR_INVALID_OPTIONS = "ERR_INVALID_OPTIONS";
     public static final String ERR_NOT_INITIALIZED = "ERR_NOT_INITIALIZED";
     public static final String ERR_ERROR_INITIALIZING = "ERR_ERROR_INITIALIZING";
     public static final String ERR_UNKNOWN = "ERR_UNKNOWN";
-    
+	public static final String SET_OPTIONS="setOptions";
 	public static final String PRELOAD_SIMPLE="preloadSimple";
 	public static final String PRELOAD_COMPLEX="preloadComplex";
 	public static final String PLAY="play";
@@ -58,6 +61,13 @@ public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFo
 	private static HashMap<String, NativeAudioAsset> assetMap;
     private static ArrayList<NativeAudioAsset> resumeList;
     private static HashMap<String, CallbackContext> completeCallbacks;
+    private boolean fadeMusic = false;
+
+    public void setOptions(JSONObject options) {
+		if(options != null) {
+			if(options.has(OPT_FADE_MUSIC)) this.fadeMusic = options.optBoolean(OPT_FADE_MUSIC);
+		}
+	}
 
     private static MediaRecorder mRecorder;
     private static Visualizer audioOutput;
@@ -115,11 +125,13 @@ public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFo
 				else
 					asset.play(new Callable<Void>() {
                         public Void call() throws Exception {
-                            CallbackContext callbackContext = completeCallbacks.get(audioID);
-                            if (callbackContext != null) {
-                                JSONObject done = new JSONObject();
-                                done.put("id", audioID);
-                                callbackContext.sendPluginResult(new PluginResult(Status.OK, done));
+                            if (completeCallbacks != null) {
+                                CallbackContext callbackContext = completeCallbacks.get(audioID);
+                                if (callbackContext != null) {
+                                    JSONObject done = new JSONObject();
+                                    done.put("id", audioID);
+                                    callbackContext.sendPluginResult(new PluginResult(Status.OK, done));
+                                }
                             }
                             return null;
                         }
@@ -373,7 +385,12 @@ public class NativeAudio extends CordovaPlugin implements AudioManager.OnAudioFo
 		initSoundPool();
 		
 		try {
-			if (PRELOAD_SIMPLE.equals(action)) {
+			if (SET_OPTIONS.equals(action)) {
+                JSONObject options = data.optJSONObject(0);
+                this.setOptions(options);
+                callbackContext.sendPluginResult( new PluginResult(Status.OK) );
+
+			} else if (PRELOAD_SIMPLE.equals(action)) {
 				cordova.getThreadPool().execute(new Runnable() {
 		            public void run() {
 		            	callbackContext.sendPluginResult( executePreload(data) );

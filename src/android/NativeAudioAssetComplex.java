@@ -5,7 +5,7 @@
 //  Created by Sidney Bofah on 2014-06-26.
 //
 
-package de.neofonie.cordova.plugin.nativeaudio;
+package com.rjfun.cordova.plugin.nativeaudio;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -78,7 +78,7 @@ public class NativeAudioAssetComplex implements OnPreparedListener, OnCompletion
 	
 	private void invokePlay( Boolean loop )
 	{
-		Boolean playing = ( mp.isLooping() || mp.isPlaying() );
+		Boolean playing = mp.isPlaying();
 		if ( playing )
 		{
 			mp.pause();
@@ -103,7 +103,7 @@ public class NativeAudioAssetComplex implements OnPreparedListener, OnCompletion
 	{
 		try
 		{
-    				if ( mp.isLooping() || mp.isPlaying() )
+    				if ( mp.isPlaying() )
 				{
 					mp.pause();
 					return true;
@@ -125,7 +125,7 @@ public class NativeAudioAssetComplex implements OnPreparedListener, OnCompletion
 	{
 		try
 		{
-			if ( mp.isLooping() || mp.isPlaying() )
+			if ( mp.isPlaying() )
 			{
 				state = INVALID;
 				mp.pause();
@@ -191,6 +191,7 @@ public class NativeAudioAssetComplex implements OnPreparedListener, OnCompletion
 			this.state = INVALID;
 			try {
 				this.stop();
+				if (completeCallback != null)
                 completeCallback.call();
 			}
 			catch (Exception e)
